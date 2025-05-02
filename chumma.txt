@@ -46,6 +46,12 @@ session_state = {
     "nearby": []
 }
 
+def get_ramp_destination_coords(building_name):
+    ramps = RAMP_COORDS.get(building_name)
+    if ramps:
+        return next(iter(ramps.values()))
+    return None
+
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
     os.makedirs("data", exist_ok=True)
@@ -137,44 +143,6 @@ async def upload(file: UploadFile = File(...)):
         "matched_row": row.to_dict() if row is not None else None
     }
 
-@app.post("/manual_start")
-async def manual_start(request: Request):
-    body = await request.json()
-    user_input = body.get("building_name", "").strip().lower()
-
-    df = pd.read_csv("data/buildings.csv")
-
-    # Fuzzy match by name
-    matched = df[df["Name"].str.lower().str.contains(user_input)]
-    if matched.empty:
-        return JSONResponse(status_code=404, content={"error": "Building not found in CSV."})
-
-    row = matched.iloc[0]
-    building_name = row["Name"]
-    building_number = str(row["Number"])
-    address = row["Address"]
-
-    # ✅ Use address → geocode for location
-    location = geocode_address(address)
-    if not location:
-        return JSONResponse(status_code=400, content={"error": f"Could not geocode address: {address}."})
-
-    session_state.update({
-        "building_name": building_name,
-        "building_number": building_number,
-        "address": address,
-        "location": location,
-        "image_path": None,
-        "nearby": get_nearby_places(location["lat"], location["lon"])
-    })
-
-    return {
-        "building_name": building_name,
-        "building_number": building_number,
-        "address": address,
-        "nearby": session_state["nearby"]
-    }
-
 @app.get("/nearby")
 async def get_nearby():
     return {"nearby": session_state["nearby"]}
@@ -228,7 +196,7 @@ async def directions(request: Request):
         - General navigation assistance if possible
         Only respond with the step-by-step navigation instructions starting from the heading 'Navigate to...'. Omit introductions or summaries.
         """
-        llm_response = query_vision_llm(session_state["image_path"], prompt, matched["name"])
+        llm_response = query_vision_llm(session_state["image_path"], prompt)
         lines = llm_response.strip().splitlines()
         trimmed = "\n".join([line for line in lines if line.strip()])
 
@@ -251,7 +219,7 @@ async def directions(request: Request):
 
             Start directly with the numbered list.
         """
-        text_response = query_text_llm(text_prompt, matched["name"])
+        text_response = query_text_llm(text_prompt)
 
         return {
             "directions": [],

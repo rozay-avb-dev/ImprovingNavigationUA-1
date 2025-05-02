@@ -37,16 +37,26 @@ def extract_address_from_text(text: str) -> str:
 
 def extract_building_info(text: str):
     lines = text.splitlines()
-    name_candidate = ""
-    number_candidate = ""
+    building_name = ""
+    building_number = ""
 
-    for i, line in enumerate(lines):
+    # Try extracting building number from any line
+    for line in lines:
         if "building number" in line.lower():
             match = re.search(r"\d{1,4}", line)
             if match:
-                number_candidate = match.group()
+                building_number = match.group().strip()
+    
+    # Try extracting building name: Look for a line containing keywords like 'Main Library' or near known address
+    for i, line in enumerate(lines):
         if re.search(r"\d{3,5}\s+E University Blvd", line):
-            if i > 0 and len(lines[i - 1].strip()) > 3:
-                name_candidate = lines[i - 1].strip()
+            # look 2 lines above in case of spacing
+            if i >= 2 and len(lines[i-2].strip()) > 3:
+                building_name = lines[i-2].strip()
+            elif i >= 1 and len(lines[i-1].strip()) > 3:
+                building_name = lines[i-1].strip()
+            else:
+                building_name = "Unknown"
 
-    return name_candidate.strip(), number_candidate.strip()
+    return building_name.strip(), building_number.strip()
+

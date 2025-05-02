@@ -1,38 +1,46 @@
-from geopy.geocoders import Nominatim
-import overpy
+import pandas as pd
+from math import radians, cos, sin, sqrt, atan2
 
-geolocator = Nominatim(user_agent="ua_navigation_bot", timeout=10)
-overpass_api = overpy.Overpass()
+CSV_PATH = "data/buildings.csv"  # ensure path is correct
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371000  # Radius of Earth in meters
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    return R * c
 
 def geocode_address(address):
-    """Returns latitude and longitude for an address"""
-    location = geolocator.geocode(address)
-    if location:
-        return {"lat": location.latitude, "lon": location.longitude}
+    df = pd.read_csv(CSV_PATH)
+    match = df[df["Address"].str.lower().str.contains(address.lower())]
+    if not match.empty:
+        row = match.iloc[0]
+        return {
+            "lat": float(row["Latitude"]),
+            "lon": float(row["Longitude"])
+        }
     return None
 
-def get_nearby_places(lat, lon, radius=200):
-    """Query Overpass API for nearby buildings using lat/lon"""
-    query = f"""
-    [out:json];
-    (
-      node(around:{radius},{lat},{lon})["building"];
-      way(around:{radius},{lat},{lon})["building"];
-      relation(around:{radius},{lat},{lon})["building"];
-    );
-    out center;
-    """
-    result = overpass_api.query(query)
+def get_nearby_places(center_lat, center_lon, radius_m=200):
+    df = pd.read_csv(CSV_PATH)
+    nearby = []
 
-    places = []
-    for element in result.nodes + result.ways + result.relations:
-        name = element.tags.get("name", "Unnamed Building")
-        lat = getattr(element, 'lat', getattr(element, 'center_lat', None))
-        lon = getattr(element, 'lon', getattr(element, 'center_lon', None))
-        if lat and lon:
-            places.append({
-                "name": name,
-                "lat": lat,
-                "lon": lon
-            })
-    return places
+    for _, row in df.iterrows():
+        try:
+            lat = float(row["Latitude"])
+            lon = float(row["Longitude"])
+            dist = haversine(center_lat, center_lon, lat, lon)
+            if dist <= radius_m:
+                nearby.append({
+                    "name": row["Name"],
+                    "lat": lat,
+                    "lon": lon,
+                    "address": row["Address"],
+                    "building_number": str(row["Number"]),
+                    "distance": round(dist, 2)
+                })
+        except:
+            continue
+
+    return sorted(nearby, key=lambda x: x["distance"])

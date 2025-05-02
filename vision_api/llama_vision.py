@@ -2,6 +2,7 @@ import base64
 import os
 import requests
 from dotenv import load_dotenv
+from geo_api.ramp_coordinates import RAMP_COORDS  # Import ramp data
 
 load_dotenv()
 
@@ -9,7 +10,13 @@ def encode_image_to_base64(image_path):
     with open(image_path, "rb") as f:
         return f"data:image/png;base64,{base64.b64encode(f.read()).decode('utf-8')}"
 
-def query_vision_llm(image_path, user_prompt):
+def get_ramp_name(building_name):
+    ramps = RAMP_COORDS.get(building_name)
+    if ramps:
+        return next(iter(ramps.keys()))  # Return first ramp name
+    return None
+
+def query_vision_llm(image_path, user_prompt, building_name=None):
     url = os.environ["LLM_BASE"] + "/v1/chat/completions"
     token = os.environ["OPENAI_API_KEY"]
 
@@ -17,6 +24,13 @@ def query_vision_llm(image_path, user_prompt):
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
+
+    ramp_name = get_ramp_name(building_name) if building_name else None
+
+    if ramp_name:
+        user_prompt += f"\n\nPlease guide the user to the ramp entrance labeled: '{ramp_name}'. Avoid describing main entrances if ramps are available."
+    else:
+        user_prompt += "\n\nGuide the user to the building entrance."
 
     image_b64 = encode_image_to_base64(image_path)
 
