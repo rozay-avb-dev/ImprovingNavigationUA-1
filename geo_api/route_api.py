@@ -1,4 +1,13 @@
 import requests
+from geo_api.ramp_coordinates import RAMP_COORDS
+
+def get_ramp_destination_coords(building_name):
+    ramps = RAMP_COORDS.get(building_name)
+    if ramps:
+        first_ramp = next(iter(ramps.values()))  # get first available ramp
+        return first_ramp
+    return None
+
 
 def get_osm_route(start_coords, end_coords, profile="walking"):
     # ❌ No snapping, use raw coordinates

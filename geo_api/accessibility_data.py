@@ -1,4 +1,14 @@
 ACCESSIBILITY_FEATURES = {
+    "Old Main": {
+        "building_number": "1",
+        "ramps": [
+            "West Entrance Ramp (Main Entrance facing the Mall)",
+            "East Side Ramp near Rose Garden"
+        ],
+        "elevators": [
+            "Central Elevator near Main Lobby"
+        ]
+    },
     "Student Union Memorial Center": {
         "building_number": "17",
         "ramps": [

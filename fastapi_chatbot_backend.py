@@ -17,14 +17,14 @@ from geo_api.osm_helper import geocode_address, get_nearby_places
 from geo_api.route_api import get_osm_route
 from geo_api.accessibility_helper import get_accessibility_info
 from vision_api.text_llm_helper import query_text_llm
+from geo_api.route_api import get_ramp_destination_coords
+
 
 load_dotenv()
 
 app = FastAPI()
 
-# Serve static frontend files
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
 
 @app.get("/", response_class=FileResponse)
 async def root():
@@ -71,26 +71,19 @@ async def upload(file: UploadFile = File(...)):
     def fuzzy_match_csv(name, number, addr):
         name = name.lower()
         addr = addr.lower() if addr else ""
-
-        # 1. Try fuzzy match on building names
         names = df["Name"].str.lower().tolist()
         match_names = difflib.get_close_matches(name, names, n=1, cutoff=0.6)
         if match_names:
             row = df[df["Name"].str.lower() == match_names[0]]
             return "name", row.iloc[0]
-
-        # 2. Exact match on number
         row = df[df["Number"].astype(str).str.strip() == number]
         if not row.empty:
             return "number", row.iloc[0]
-
-        # 3. Fuzzy match on address
         addresses = df["Address"].str.lower().tolist()
         match_addresses = difflib.get_close_matches(addr, addresses, n=1, cutoff=0.6)
         if match_addresses:
             row = df[df["Address"].str.lower() == match_addresses[0]]
             return "address", row.iloc[0]
-
         return None, None
 
     match_source, row = fuzzy_match_csv(building_name, building_number, address)
@@ -143,7 +136,6 @@ async def upload(file: UploadFile = File(...)):
         "match_source": match_source if row is not None else "llm_fallback",
         "matched_row": row.to_dict() if row is not None else None
     }
-
 
 @app.post("/manual_start")
 async def manual_start(request: Request):
@@ -204,14 +196,19 @@ async def directions(request: Request):
             "llm_response": f"Could not find {building_name} in nearby buildings."
         }
 
-    directions = get_osm_route(session_state["location"], {"lat": matched["lat"], "lon": matched["lon"]})
+    # Use ramp coordinates if accessibility is enabled
+    if accessibility_enabled:
+        ramp_coords = get_ramp_destination_coords(matched["name"])
+        destination = ramp_coords if ramp_coords else {"lat": matched["lat"], "lon": matched["lon"]}
+    else:
+        destination = {"lat": matched["lat"], "lon": matched["lon"]}
+
+    directions = get_osm_route(session_state["location"], destination)
     directions = [step for step in directions if not step.startswith("[")]
 
     accessibility_info = {}
     if accessibility_enabled:
-        print("[DEBUG] Fetching accessibility info for:", matched["name"])
         accessibility_info = get_accessibility_info(matched["name"])
-        print("[DEBUG] Accessibility fetched:", accessibility_info)
 
     if directions:
         return {
@@ -220,7 +217,6 @@ async def directions(request: Request):
             "accessibility": accessibility_info
         }
     elif session_state["image_path"]:
-        # 🖼️ Vision fallback using the uploaded map
         prompt = f"""
         You are a helpful assistant.
         The user is currently at: {session_state['building_name']} (Building {session_state['building_number']}), {session_state['address']}.
@@ -232,8 +228,7 @@ async def directions(request: Request):
         - General navigation assistance if possible
         Only respond with the step-by-step navigation instructions starting from the heading 'Navigate to...'. Omit introductions or summaries.
         """
-        llm_response = query_vision_llm(session_state["image_path"], prompt)
-
+        llm_response = query_vision_llm(session_state["image_path"], prompt, matched["name"])
         lines = llm_response.strip().splitlines()
         trimmed = "\n".join([line for line in lines if line.strip()])
 
@@ -243,7 +238,6 @@ async def directions(request: Request):
             "accessibility": accessibility_info
         }
     else:
-        # 💬 Text LLM fallback using session data
         text_prompt = f"""
             You are a helpful campus navigation assistant. The user is currently at:
             **{session_state['building_name']}** (Building {session_state['building_number']}), **{session_state['address']}**.
@@ -256,15 +250,11 @@ async def directions(request: Request):
             - Keep it concise and easy to follow
 
             Start directly with the numbered list.
-            """
-
-        text_response = query_text_llm(text_prompt)
+        """
+        text_response = query_text_llm(text_prompt, matched["name"])
 
         return {
             "directions": [],
             "llm_response": text_response.strip(),
             "accessibility": accessibility_info
         }
-
-
-

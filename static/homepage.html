@@ -7,55 +7,46 @@
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="icon" type="image/png" href="/static/icons/icon1.png" />
   <meta name="theme-color" content="#a6192e" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/static/service-worker.js')
-        .then(reg => console.log('Service worker registered!', reg))
-        .catch(err => console.error('Service worker NOT registered', err));
-    });
-  }
-</script>
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      height: 100%;
       font-family: 'Segoe UI', sans-serif;
-      background: #f7f9fb;
     }
+
     header {
       background: #a6192e;
       color: white;
-      padding: 1rem 2rem;
+      height: 60px;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
-    header h1 {
+
+    header h2 {
       margin: 0;
-      font-size: 1.5rem;
+      font-size: 1.2rem;
     }
-    nav a {
-      color: white;
-      margin-left: 1.5rem;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    .container {
-      padding: 2rem;
-      text-align: center;
-    }
-    .container h2 {
-      color: #003366;
-    }
+
     #map {
-      width: 90%;
-      height: 500px;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      margin-top: 2rem;
+      position: absolute;
+      top: 60px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: calc(100vh - 60px);
+      width: 100vw;
     }
+
     .chat-fab {
       position: fixed;
       bottom: 20px;
@@ -72,13 +63,16 @@
       transition: background 0.3s ease;
       z-index: 1000;
     }
+
     .chat-fab:hover {
       background: #87001e;
     }
+
     .chat-fab img {
       width: 28px;
       height: 28px;
     }
+
     .chat-modal {
       position: fixed;
       bottom: 90px;
@@ -92,23 +86,25 @@
       display: none;
       z-index: 999;
     }
-    .chat-fullscreen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      border-radius: 0;
-    }
-    .chat-fullscreen #map,
-    .chat-fullscreen .leaflet-control-attribution,
-    .chat-fullscreen .leaflet-control-zoom {
-      display: none;
-    }
+
     .chat-modal iframe {
       width: 100%;
       height: 100%;
       border: none;
+    }
+
+    .chat-fullscreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      border-radius: 0 !important;
+      z-index: 1001;
+    }
+
+    .chat-fullscreen iframe {
+      height: 100%;
     }
     .chat-close {
       position: absolute;
@@ -119,6 +115,7 @@
       color: #999;
       font-weight: bold;
     }
+
     .chat-expand {
       position: absolute;
       bottom: 8px;
@@ -128,29 +125,46 @@
       color: #003366;
       font-weight: bold;
     }
+
+    .chat-tooltip {
+      position: fixed;
+      bottom: 100px; /* above FAB */
+      right: 30px;
+      background: #0C234B;
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      font-size: 0.9rem;
+      z-index: 1001;
+      animation: fadeInOut 6s ease-in-out infinite;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(10px); }
+      10% { opacity: 1; transform: translateY(0); }
+      80% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-10px); }
+    }
+
   </style>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body>
+
   <header>
-    <h1>University of Arizona</h1>
-    <nav>
-      <a href="#">UA NavAccess</a>
-    </nav>
+    <h2>Welcome to the University of Arizona Navigation Assistant</h2>
   </header>
 
-  <div class="container">
-    <h2>Welcome to the University of Arizona Navigation Assistant</h2>
-    <p>This tool helps visually impaired users navigate the campus using map images and AI assistance.</p>
-    <div id="map"></div>
+  <div id="map"></div>
+
+  <div class="chat-tooltip" id="chatTooltip">
+    💬 Use our AI assistant for routes!
   </div>
 
   <div class="chat-modal" id="chatModal">
     <span class="chat-close" onclick="toggleChat()">×</span>
     <span class="chat-expand" onclick="toggleFullscreen()">⛶ Fullscreen</span>
     <iframe src="/static/chatbot_ui.html"></iframe>
-
   </div>
 
   <div class="chat-fab" onclick="toggleChat()" title="Open Chatbot">
@@ -159,7 +173,7 @@
 
   <script>
     const map = L.map('map').setView([32.2319, -110.9501], 17);
-    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
@@ -169,19 +183,51 @@
 
     function toggleChat() {
       const modal = document.getElementById('chatModal');
-      modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+      const tooltip = document.getElementById('chatTooltip');
+
+      // Toggle chatbot display
+      const isOpen = modal.style.display === 'block';
+      modal.style.display = isOpen ? 'none' : 'block';
       modal.classList.remove('chat-fullscreen');
+
+      // 🔻 Hide tooltip if bot is opened
+      if (!isOpen) {
+        if (tooltip) {
+          tooltip.style.animation = "none"; // stop animation
+          tooltip.style.opacity = "0";      // fade out
+          setTimeout(() => tooltip.style.display = "none", 800); // hide
+        }
+      }
+
+      // 🔁 Show tooltip again if bot is closed
+      else {
+        if (tooltip) {
+          tooltip.style.display = "block";
+          setTimeout(() => {
+            tooltip.style.animation = "fadeInOut 6s ease-in-out infinite";
+            tooltip.style.opacity = "1";
+          }, 10); // slight delay to reset animation
+        }
+      }
     }
 
     function toggleFullscreen() {
       const modal = document.getElementById('chatModal');
       modal.classList.toggle('chat-fullscreen');
+
+      const mapContainer = document.getElementById('map');
       if (modal.classList.contains('chat-fullscreen')) {
-        map.getContainer().style.display = 'none';
+        mapContainer.style.display = 'none';
       } else {
-        map.getContainer().style.display = 'block';
+        mapContainer.style.display = 'block';
       }
     }
+
+    // setTimeout(() => {
+    //   const tip = document.getElementById('chatTooltip');
+    //   if (tip) tip.style.display = 'none';
+    // }, 6000);
+
   </script>
 </body>
 </html>
