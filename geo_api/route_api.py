@@ -11,14 +11,14 @@ def get_ramp_destination_coords(building_name):
 
 def get_osm_route(start_coords, end_coords, profile="walking"):
     # ❌ No snapping, use raw coordinates
-    print("[DEBUG] Start Coords:", start_coords)
-    print("[DEBUG] End Coords:", end_coords)
+    print(" Start Coords:", start_coords)
+    print(" End Coords:", end_coords)
 
     base_url = "https://router.project-osrm.org/route/v1"
     coords = f"{start_coords['lon']},{start_coords['lat']};{end_coords['lon']},{end_coords['lat']}"
     url = f"{base_url}/{profile}/{coords}?overview=full&steps=true"
 
-    print("[DEBUG] Routing URL:", url)
+    print(" Routing URL:", url)
 
     try:
         response = requests.get(url)

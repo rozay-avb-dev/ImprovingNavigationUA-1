@@ -56,7 +56,7 @@ def query_vision_llm(image_path, user_prompt, building_name=None):
 
     if response.status_code != 200:
         print("[ERROR] LLM API returned:", response.status_code)
-        print("[DEBUG] Response text:", response.text)
+        print(" Response text:", response.text)
         return "Sorry, I couldn't generate a description due to an API issue."
 
     try:
@@ -64,5 +64,5 @@ def query_vision_llm(image_path, user_prompt, building_name=None):
         return result["choices"][0]["message"]["content"]
     except Exception as e:
         print("[ERROR] Failed to parse LLM JSON:", e)
-        print("[DEBUG] Response content:", response.content)
+        print(" Response content:", response.content)
         return "Sorry, the LLM response couldn't be processed."
