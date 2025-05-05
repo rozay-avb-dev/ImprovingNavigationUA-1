@@ -128,7 +128,7 @@
 
     .chat-tooltip {
       position: fixed;
-      bottom: 100px; /* above FAB */
+      bottom: 100px;
       right: 30px;
       background: #0C234B;
       color: #ffffff;
@@ -147,29 +147,86 @@
       100% { opacity: 0; transform: translateY(-10px); }
     }
 
+    .visually-hidden {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+
   </style>
 </head>
 <body>
 
-  <header>
+  <header role="banner" aria-label="University of Arizona Navigation Header">
     <h2>Welcome to the University of Arizona Navigation Assistant</h2>
   </header>
 
-  <div id="map"></div>
+  <main role="main">
+    <div id="map" role="region" aria-label="Campus map"></div>
 
-  <div class="chat-tooltip" id="chatTooltip">
-    💬 Use our AI assistant for routes!
-  </div>
+    <div class="chat-tooltip" id="chatTooltip" role="status" aria-live="polite">
+      💬 Use our AI assistant for routes!
+    </div>
 
-  <div class="chat-modal" id="chatModal">
-    <span class="chat-close" onclick="toggleChat()">×</span>
-    <span class="chat-expand" onclick="toggleFullscreen()">⛶ Fullscreen</span>
-    <iframe src="/static/chatbot_ui.html"></iframe>
-  </div>
+    <div
+      class="chat-modal"
+      id="chatModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="chatbotTitle"
+      aria-hidden="true"
+    >
 
-  <div class="chat-fab" onclick="toggleChat()" title="Open Chatbot">
-    <img src="https://img.icons8.com/ios-filled/50/ffffff/chat.png" alt="Chatbot">
-  </div>
+    <h2 id="chatbotTitle" class="visually-hidden">UA Navigation Chatbot</h2>
+
+      <span
+        class="chat-close"
+        role="button"
+        tabindex="0"
+        aria-label="Close chatbot window"
+        onclick="toggleChat()"
+        onkeypress="if(event.key === 'Enter') toggleChat()"
+      >
+        ×
+      </span>
+
+      <span
+        class="chat-expand"
+        role="button"
+        tabindex="0"
+        aria-label="Toggle full screen view of chatbot"
+        onclick="toggleFullscreen()"
+        onkeypress="if(event.key === 'Enter') toggleFullscreen()"
+      >
+        ⛶ Fullscreen
+      </span>
+
+      <iframe
+        src="/static/chatbot_ui.html"
+        title="UA Nav Access Chatbot Conversation"
+        aria-describedby="chatbotDesc"
+      ></iframe>
+      <p id="chatbotDesc" class="visually-hidden">
+        This chatbot helps you get accessible walking directions across the University of Arizona campus.
+      </p>
+    </div>
+
+    <button
+      class="chat-fab"
+      id="openChat"
+      aria-label="Open chatbot window"
+      onclick="toggleChat()"
+    >
+      <img
+        src="https://img.icons8.com/ios-filled/50/ffffff/chat.png"
+        alt="Chat icon"
+        role="img"
+      />
+    </button>
+  </main>
 
   <script>
     const map = L.map('map').setView([32.2319, -110.9501], 17);
@@ -185,28 +242,26 @@
       const modal = document.getElementById('chatModal');
       const tooltip = document.getElementById('chatTooltip');
 
-      // Toggle chatbot display
+      // Toggle-chatbot-display
       const isOpen = modal.style.display === 'block';
       modal.style.display = isOpen ? 'none' : 'block';
       modal.classList.remove('chat-fullscreen');
 
-      // 🔻 Hide tooltip if bot is opened
       if (!isOpen) {
         if (tooltip) {
-          tooltip.style.animation = "none"; // stop animation
-          tooltip.style.opacity = "0";      // fade out
-          setTimeout(() => tooltip.style.display = "none", 800); // hide
+          tooltip.style.animation = "none";
+          tooltip.style.opacity = "0";
+          setTimeout(() => tooltip.style.display = "none", 800);
         }
       }
 
-      // 🔁 Show tooltip again if bot is closed
       else {
         if (tooltip) {
           tooltip.style.display = "block";
           setTimeout(() => {
             tooltip.style.animation = "fadeInOut 6s ease-in-out infinite";
             tooltip.style.opacity = "1";
-          }, 10); // slight delay to reset animation
+          }, 10);
         }
       }
     }
@@ -222,12 +277,6 @@
         mapContainer.style.display = 'block';
       }
     }
-
-    // setTimeout(() => {
-    //   const tip = document.getElementById('chatTooltip');
-    //   if (tip) tip.style.display = 'none';
-    // }, 6000);
-
   </script>
 </body>
 </html>

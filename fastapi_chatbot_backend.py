@@ -11,12 +11,12 @@ from pathlib import Path
 import pandas as pd
 
 from dotenv import load_dotenv
-from vision_api.llama_vision import query_vision_llm
+from models.llama_vision import query_vision_llm
 from geo_api.ocr_utils import extract_text_from_image, extract_address_from_text, extract_building_info
 from geo_api.osm_helper import geocode_address, get_nearby_places
 from geo_api.route_api import get_osm_route
 from geo_api.accessibility_helper import get_accessibility_info
-from vision_api.text_llm_helper import query_text_llm
+from models.text_llm_helper import query_text_llm
 from geo_api.route_api import get_ramp_destination_coords
 
 

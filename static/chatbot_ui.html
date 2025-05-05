@@ -129,26 +129,46 @@
         color: #b00020;
         font-weight: bold;
       }
+
+      .visually-hidden {
+        position: absolute;
+        left: -9999px;
+        top: auto;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+      }
   </style>
 </head>
 <body>
-  <div id="chatbox">
-    <h1>UA Nav Access Chatbot</h1>
+  <main id="chatbox" role="main" aria-labelledby="chat-title">
+    <h1 id="chat-title">UA Nav Access Chatbot</h1>
 
-    <div class="file-section">
-      <form id="upload-form" enctype="multipart/form-data">
+    <section class="file-section" aria-label="Image upload section">
+      <p id="upload-instructions" class="visually-hidden">
+        Choose a campus map screenshot to upload for analysis.
+      </p>
+      <form id="upload-form" enctype="multipart/form-data" aria-describedby="upload-instructions">
+        <label for="file">Upload campus map screenshot:</label>
         <input type="file" name="file" id="file" required />
         <button type="submit">Upload Image</button>
       </form>
-    </div>
+    </section>
 
-    <div id="messages"></div>
+    <!-- Live region for screen reader to announce messages -->
+    <section id="messages" role="log" aria-live="polite" aria-relevant="additions" aria-atomic="false"></section>
 
-    <div id="text-input-area">
-      <input type="text" id="user-message" placeholder="Type a response..." />
-      <button id="send-btn">Send</button>
-    </div>
-  </div>
+    <section id="text-input-area" aria-label="User input section">
+      <label for="user-message" class="visually-hidden">Your message:</label>
+      <input
+        type="text"
+        id="user-message"
+        placeholder="Type a response..."
+        aria-label="Type your message here and press send or Enter"
+      />
+      <button id="send-btn" aria-label="Send message">Send</button>
+    </section>
+  </main>
 
   <script>
     let imageUploaded = false;
@@ -162,7 +182,7 @@
     function addMessage(role, text) {
       const div = document.createElement("div");
       div.className = `message ${role}`;
-      div.innerHTML = text;
+      div.innerHTML = `<div role="alert" aria-live="polite">${text}</div>`;
       messages.appendChild(div);
       messages.scrollTop = messages.scrollHeight;
     }
