@@ -55,7 +55,7 @@ async def upload(file: UploadFile = File(...)):
 
     session_state["image_path"] = path
     ocr_text = extract_text_from_image(path)
-    print(" Raw OCR text:\n", ocr_text)
+    print("[DEBUG] Raw OCR text:\n", ocr_text)
 
     address = extract_address_from_text(ocr_text)
     if not address:

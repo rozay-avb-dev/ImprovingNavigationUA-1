@@ -55,6 +55,10 @@ Number,Name,Address,Latitude,Longitude
 55,Main Library,1510 E University Blvd,32.2309343,-110.9491088
 55A,Main Library Expansion,1510 E University Blvd,32.2309343,-110.9491088
 56,Bear Down Building,1428 E University Blvd,32.2311778,-110.9500772
+<<<<<<< HEAD
+=======
+56,Bear Down Gymnasium,1428 E University Blvd,32.2311778,-110.9500772
+>>>>>>> 2f8b7faf938bfb08d364521393d2be53cb89f848
 56A,Bartlett Academic Success Center,1435 E 4 St,32.2306858,-110.9502326
 57,Hopi Lodge Residence Hall,1440 E 4 St,32.2302399,-110.9499577
 58,West Stadium,530 N Vine Ave,32.2287018,-110.9494673

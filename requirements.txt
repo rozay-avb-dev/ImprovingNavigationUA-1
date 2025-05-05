@@ -10,6 +10,13 @@ opencv-python
 # AI and LLM
 langchain-openai
 langchain-core
+<<<<<<< HEAD
+=======
+# transformers 
+# datasets 
+# pillow 
+# torchvision
+>>>>>>> 2f8b7faf938bfb08d364521393d2be53cb89f848
 
 # Environment
 python-dotenv
@@ -20,5 +27,8 @@ geopy
 overpy
 playwright
 
+<<<<<<< HEAD
 streamlit
+=======
+>>>>>>> 2f8b7faf938bfb08d364521393d2be53cb89f848
 

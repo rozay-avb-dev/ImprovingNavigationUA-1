@@ -50,7 +50,11 @@ def query_text_llm(prompt: str, building_name: str = None) -> str:
 
     if response.status_code != 200:
         print("[ERROR] Text LLM API returned:", response.status_code)
+<<<<<<< HEAD
         print(" Response text:", response.text)
+=======
+        print("[DEBUG] Response text:", response.text)
+>>>>>>> 2f8b7faf938bfb08d364521393d2be53cb89f848
         return "I couldn't process your request due to an API error."
 
     try:
